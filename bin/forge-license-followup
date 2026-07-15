@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Process due license follow-up email touchpoints
+exec uv run "$(dirname "$0")/../.claude/hooks/company/license_manager.py" process "$@"

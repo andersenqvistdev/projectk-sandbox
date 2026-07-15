@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# List and inspect issued licenses
+exec uv run "$(dirname "$0")/../.claude/hooks/company/license_manager.py" "${@:-scan}"

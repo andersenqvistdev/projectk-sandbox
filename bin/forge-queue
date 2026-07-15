@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# forge-queue — Forge Labs work queue monitor
+#
+# Usage:
+#   forge-queue              # One-shot status
+#   forge-queue watch        # Live refresh (5s default)
+#   forge-queue watch 10     # Live refresh every 10s
+#   forge-queue results      # Task outcomes (last 10)
+#   forge-queue results --id task-20260707112436-61ab3e  # Detail view
+#   forge-queue heal         # Auto-fix queue issues
+#   forge-queue heal --dry   # Preview fixes without applying
+#   forge-queue json         # Machine-readable JSON output
+#   forge-queue prs          # List all tasks with PRs
+#   forge-queue follow <id>  # Trace task: queue → worker log → PR
+#   forge-queue rejections   # Admission rejections log (--limit N)
+#   forge-queue approvals    # List pending idea approvals (id, title, value, age)
+#   forge-queue approve <id> # Approve a pending idea by ID
+#   forge-queue approve --all # Approve all pending ideas
+#   forge-queue audit <PR#>  # Print merge audit chain for a PR number or task-id
+#   forge-queue help         # Show this help
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+MONITOR="${SCRIPT_DIR}/.claude/hooks/company/queue_monitor.py"
+RESULTS="${SCRIPT_DIR}/.claude/hooks/company/result_viewer.py"
+FOLLOWER="${SCRIPT_DIR}/.claude/hooks/company/task_follower.py"
+REJECTIONS="${SCRIPT_DIR}/.claude/hooks/company/rejection_viewer.py"
+APPROVALS="${SCRIPT_DIR}/.claude/hooks/company/approval_viewer.py"
+AUDIT="${SCRIPT_DIR}/.claude/hooks/company/merge_audit_viewer.py"
+
+if [ ! -f "$MONITOR" ]; then
+    echo "Error: queue_monitor.py not found at ${MONITOR}" >&2
+    exit 1
+fi
+
+case "${1:-}" in
+    watch|w)
+        exec uv run "$MONITOR" --watch "${2:-5}"
+        ;;
+    heal|fix)
+        if [ "${2:-}" = "--dry" ] || [ "${2:-}" = "-n" ]; then
+            exec uv run "$MONITOR" --heal --dry-run
+        else
+            exec uv run "$MONITOR" --heal
+        fi
+        ;;
+    json|j)
+        exec uv run "$MONITOR" --json
+        ;;
+    prs|p)
+        exec uv run "$MONITOR" --prs
+        ;;
+    results|r)
+        shift
+        exec uv run "$RESULTS" "$@"
+        ;;
+    follow|f)
+        shift
+        exec uv run "$FOLLOWER" "$@"
+        ;;
+    rejections|reject)
+        shift
+        exec uv run "$REJECTIONS" "$@"
+        ;;
+    approvals)
+        exec uv run "$APPROVALS"
+        ;;
+    approve)
+        shift
+        exec uv run "$APPROVALS" approve "$@"
+        ;;
+    audit|a)
+        shift
+        exec uv run "$AUDIT" "$@"
+        ;;
+    help|--help|-h)
+        head -20 "$0" | tail -17
+        ;;
+    *)
+        exec uv run "$MONITOR" "$@"
+        ;;
+esac
