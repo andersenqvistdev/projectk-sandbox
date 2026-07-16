@@ -51,8 +51,9 @@ def parse_args(argv=None):
 
 def read_rows(path):
     if path:
-        with open(path, newline="", encoding="utf-8") as f:
+        with open(path, newline="", encoding="utf-8-sig") as f:
             return list(csv.reader(f))
+    sys.stdin.reconfigure(encoding="utf-8-sig")
     return list(csv.reader(sys.stdin))
 
 

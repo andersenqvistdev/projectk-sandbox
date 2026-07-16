@@ -50,6 +50,20 @@ def test_missing_file_reports_error():
     assert "error" in result.stderr
 
 
+def test_strips_utf8_bom_from_file_header(tmp_path):
+    csv_path = tmp_path / "in.csv"
+    csv_path.write_bytes(b"\xef\xbb\xbfname,age\nAda,36\n")
+    result = run([str(csv_path)])
+    assert result.returncode == 0
+    assert result.stdout == "| name | age |\n| --- | --- |\n| Ada | 36 |\n"
+
+
+def test_strips_utf8_bom_from_stdin_header():
+    result = run([], input="﻿name,age\nAda,36\n")
+    assert result.returncode == 0
+    assert result.stdout == "| name | age |\n| --- | --- |\n| Ada | 36 |\n"
+
+
 # --- stdin + output file (G2) ---
 
 
