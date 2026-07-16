@@ -120,18 +120,17 @@ def main(argv=None):
         table = build_table(
             rows, no_header=args.no_header, align=args.align, sort=args.sort
         )
+        if args.output:
+            with open(args.output, "w", encoding="utf-8") as f:
+                f.write(table)
+        else:
+            sys.stdout.write(table)
     except FileNotFoundError as e:
         print(f"csv2md: error: {e.strerror}: {e.filename}", file=sys.stderr)
         return 1
     except ValueError as e:
         print(f"csv2md: error: {e}", file=sys.stderr)
         return 1
-
-    if args.output:
-        with open(args.output, "w", encoding="utf-8") as f:
-            f.write(table)
-    else:
-        sys.stdout.write(table)
     return 0
 
 
