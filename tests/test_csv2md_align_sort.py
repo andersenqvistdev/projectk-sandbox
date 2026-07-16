@@ -235,3 +235,61 @@ def test_sort_does_not_disturb_header_row_or_alignment_row_order():
     assert lines[0] == "| b | a |"
     assert lines[1] == "| ---: | :--- |"
     assert lines[2:] == ["| 1 | x |", "| 2 | y |"]
+
+
+# --- --align: further token-parsing edge cases ---
+
+
+def test_align_trailing_comma_yields_empty_token_and_raises():
+    """A trailing comma (e.g. --align left,) produces an empty token that
+    is not a valid alignment keyword and must fail loudly rather than being
+    silently ignored like tokens past the header width are."""
+    with pytest.raises(ValueError, match="''"):
+        csv2md.build_table([["a", "b"], ["1", "2"]], align="left,")
+
+
+def test_cli_align_trailing_comma_exits_nonzero_with_stderr(tmp_path):
+    csv_path = write_csv(tmp_path, "in.csv", "a,b\n1,2\n")
+    result = run([str(csv_path), "--align", "left,"])
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "error" in result.stderr
+
+
+def test_align_empty_string_behaves_as_no_alignment_flag():
+    """--align "" is falsy in Python, so build_table takes the same branch
+    as "no --align given at all" rather than raising on an empty token.
+    This documents that quirk of the current implementation."""
+    with_empty = csv2md.build_table([["a", "b"], ["1", "2"]], align="")
+    without_flag = csv2md.build_table([["a", "b"], ["1", "2"]], align=None)
+    assert with_empty == without_flag
+    assert with_empty.splitlines()[1] == "| --- | --- |"
+
+
+def test_align_header_only_table_still_emits_separator_row():
+    table = csv2md.build_table([["a", "b"]], align="left,right")
+    lines = table.splitlines()
+    assert lines == ["| a | b |", "| :--- | ---: |"]
+
+
+# --- --sort: column resolution edge cases ---
+
+
+def test_sort_prefers_header_name_match_over_numeric_column_index():
+    """When a header is literally named "1", resolve_column must match it
+    by name rather than reinterpreting "1" as a 1-based column index."""
+    table = csv2md.build_table(
+        [["1", "b"], ["z", "2"], ["a", "1"]],
+        sort="1",
+    )
+    lines = table.splitlines()[2:]
+    assert lines == ["| a | 1 |", "| z | 2 |"]
+
+
+def test_sort_duplicate_header_name_resolves_to_first_occurrence():
+    table = csv2md.build_table(
+        [["a", "a"], ["2", "x"], ["1", "y"]],
+        sort="a",
+    )
+    lines = table.splitlines()[2:]
+    assert lines == ["| 1 | y |", "| 2 | x |"]
