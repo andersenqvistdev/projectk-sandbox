@@ -70,6 +70,16 @@ def test_writes_to_output_file(tmp_path):
     )
 
 
+def test_output_file_in_missing_directory_reports_clean_error(tmp_path):
+    csv_path = write_csv(tmp_path, "in.csv", "a,b\n1,2\n")
+    out_path = tmp_path / "no-such-dir" / "out.md"
+    result = run([str(csv_path), "-o", str(out_path)])
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "error" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
 # --- alignment + sort (G3) ---
 
 
