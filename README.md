@@ -8,6 +8,8 @@ stdin and writes an aligned Markdown table to stdout or a file.
 
 No packaging step required — `csv2md` is one script.
 
+**Requirements:** Python 3.6+ (stdlib only, no third-party packages).
+
 ```bash
 git clone https://github.com/andersenqvistdev/projectk-sandbox.git
 cd projectk-sandbox
@@ -26,6 +28,8 @@ Or put it on your `PATH` for a shorter command:
 ln -s "$(pwd)/scripts/csv2md.py" /usr/local/bin/csv2md
 csv2md --help
 ```
+
+Remove the symlink to uninstall: `rm /usr/local/bin/csv2md`.
 
 The rest of this document uses `csv2md` as shorthand for
 `python3 scripts/csv2md.py`.
@@ -83,7 +87,8 @@ cat sample.csv | csv2md
 
 ### `-o FILE`, `--output FILE`
 
-Write the Markdown table to `FILE` instead of stdout.
+Write the Markdown table to `FILE` instead of stdout. `-o` and `--output`
+are interchangeable.
 
 ```bash
 csv2md sample.csv -o table.md
@@ -96,6 +101,12 @@ cat table.md
 | Ada | 36 | London |
 | Linus | 54 | Helsinki |
 | Grace | 85 | New York |
+```
+
+Equivalent using the long form:
+
+```bash
+csv2md sample.csv --output table.md
 ```
 
 ### `--align ALIGN`
@@ -157,10 +168,14 @@ printf '1,2,3\n4,5,6\n' | csv2md --no-header
 
 ### `-h`, `--help`
 
-Show usage and exit.
+Show usage and exit. `-h` and `--help` are interchangeable.
 
 ```bash
 csv2md --help
+```
+
+```bash
+csv2md -h
 ```
 
 ## Combining flags
